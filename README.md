@@ -1,5 +1,7 @@
 # KTU Results Bot
 
+![Cookies](assets/cookies.png)
+
 A Telegram bot built to seamlessly fetch Kerala Technological University (KTU) academic results in the background. Built with **TypeScript**, **Bun**, and the **Telegraf** framework.
 
 ## Features
