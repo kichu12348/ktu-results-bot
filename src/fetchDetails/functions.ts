@@ -9,6 +9,19 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const MAX_REDIRECTS = 5;
 
+// const test = `<div id="loginFailureDiv" style="">
+//                                              <div class="alert alert-danger">Error ! Invalid username or password.</div>
+// 										</div>
+// `;
+
+// const LOGIN_FAILED_ERROR_DIV =
+//   /<div[^>]*?id="loginFailureDiv"[^>]*>[\s\S]*?<div[^>]*?class="alert alert-danger"[^>]*>(.*?)<\/div>[\s\S]*?<\/div>/;
+
+// const match = test.match(LOGIN_FAILED_ERROR_DIV);
+// if (match) {
+//   console.log(match[1]);
+// }
+
 export async function fetchLoginCsrfToken() {
   try {
     const cookieJar = new Map<string, string>();

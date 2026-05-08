@@ -4,18 +4,66 @@ import { checkRateLimit } from "../utils/rateLimit";
 import { addJobToQueue } from "../core/queue";
 import type { Semester } from "../fetchDetails/functions";
 
+export const activeWizardChats = new Set<number>();
+
+const clearSceneTimeout = (ctx: BotContext) => {
+  if (ctx.session.timeoutId) {
+    clearTimeout(ctx.session.timeoutId);
+    ctx.session.timeoutId = undefined;
+  }
+};
+
+const setSceneTimeout = (ctx: BotContext) => {
+  if (ctx.chat) activeWizardChats.add(ctx.chat.id);
+  clearSceneTimeout(ctx);
+  ctx.session.timeoutId = setTimeout(async () => {
+    try {
+      await ctx.reply(
+        "⏳ Session timed out due to inactivity. Please start /fetch again.",
+      );
+      ctx.session.password = undefined;
+      ctx.session.username = undefined;
+      ctx.session.semester = undefined;
+      if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
+      if ((ctx.session as any).__scenes) {
+        delete (ctx.session as any).__scenes;
+      }
+    } catch (e) {
+      console.warn("Could not send timeout message");
+    }
+  }, 120000); // 2 minutes
+};
+
 export const scrapeWizard = new Scenes.WizardScene<BotContext>(
   "SCRAPE_WIZARD",
   async (ctx) => {
+    setSceneTimeout(ctx);
     await ctx.reply(
-      "📝 Let's fetch your KTU results.\n\nPlease enter your *KTU Username* (e.g. TVA19CS012):",
+      "📝 Let's fetch your KTU results.\n\nPlease enter your *KTU Username* (e.g. CHN23CS321):",
       { parse_mode: "Markdown" },
     );
     return ctx.wizard.next();
   },
   async (ctx) => {
+    setSceneTimeout(ctx);
     if (!ctx.message || !("text" in ctx.message)) return;
-    ctx.session.username = ctx.message.text.toUpperCase();
+    const text = ctx.message.text;
+    if (
+      !text ||
+      text.trim() === "" ||
+      text.startsWith("/") ||
+      text.toLowerCase().includes("fetch") ||
+      text.toLowerCase().includes("cancel") ||
+      text.toLowerCase().includes("status") ||
+      text.toLowerCase().includes("help") ||
+      text.toLowerCase().includes("github") ||
+      text.toLowerCase().includes("start")
+    ) {
+      await ctx.reply("Please enter a valid username.");
+      await ctx.scene.reenter();
+      return;
+    }
+    ctx.session.username = text.toUpperCase().replace(/\s+/g, "");
 
     await ctx.reply(
       `🔒 Please enter your *Password* for ${ctx.session.username}:\n_(Your password is safe. It will be deleted from memory right after scraping)_`,
@@ -24,6 +72,7 @@ export const scrapeWizard = new Scenes.WizardScene<BotContext>(
     return ctx.wizard.next();
   },
   async (ctx) => {
+    setSceneTimeout(ctx);
     if (!ctx.message || !("text" in ctx.message)) return;
     ctx.session.password = ctx.message.text;
 
@@ -47,6 +96,7 @@ export const scrapeWizard = new Scenes.WizardScene<BotContext>(
         Markup.button.callback("S6", "6"),
       ],
       [Markup.button.callback("S7", "7"), Markup.button.callback("S8", "8")],
+      [Markup.button.callback("❌ Cancel", "cancel")],
     ]);
 
     await ctx.reply("📚 Select the Semester:", inlineKeyboard);
@@ -57,10 +107,24 @@ export const scrapeWizard = new Scenes.WizardScene<BotContext>(
 
     const data = ctx.callbackQuery.data;
 
+    if (data === "cancel") {
+      if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
+      clearSceneTimeout(ctx);
+      try {
+        await ctx.editMessageText("❌ Fetch cancelled.");
+      } catch (e) {
+        console.warn("Could not edit message to cancelled state.");
+      }
+      return ctx.scene.leave();
+    }
+
     if (!["1", "2", "3", "4", "5", "6", "7", "8"].includes(data)) {
+      setSceneTimeout(ctx);
       await ctx.reply("Invalid semester selected. Try again.");
       return;
     }
+
+    clearSceneTimeout(ctx);
 
     try {
       await ctx.editMessageText(`📚 Selected Semester: S${data}`);
@@ -71,9 +135,13 @@ export const scrapeWizard = new Scenes.WizardScene<BotContext>(
     ctx.session.semester = data;
 
     const userId = ctx.from?.id;
-    if (!userId) return ctx.scene.leave();
+    if (!userId) {
+      if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
+      return ctx.scene.leave();
+    }
 
     if (!checkRateLimit(userId)) {
+      if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
       await ctx.reply(
         "🛑 You have exceeded your rate limit. Please try again later (Max 5 requests per hour).",
       );
@@ -103,6 +171,7 @@ export const scrapeWizard = new Scenes.WizardScene<BotContext>(
       );
     }
 
+    if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
     return ctx.scene.leave();
   },
 );

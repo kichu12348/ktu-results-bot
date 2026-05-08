@@ -14,12 +14,18 @@ export default async function fetchDetails({
 }: FetchParams) {
   const { csrfToken, sessionCookie } = await asset.fetchLoginCsrfToken();
   if (csrfToken && sessionCookie) {
-    const { sessionCookie: newSessionCookie } = await asset.performLogin({
-      username,
-      password,
-      csrfToken,
-      sessionCookie,
-    });
+    const { sessionCookie: newSessionCookie, error } = await asset.performLogin(
+      {
+        username,
+        password,
+        csrfToken,
+        sessionCookie,
+      },
+    );
+
+    if (error) {
+      throw error;
+    }
 
     if (newSessionCookie) {
       const { csrfToken: gradeCardToken } =

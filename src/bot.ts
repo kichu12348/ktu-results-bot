@@ -4,14 +4,18 @@ import type { BotContext } from "./types/session";
 import { scrapeWizard } from "./scenes/scrapeWizard";
 import { initQueue, getJobStatus, cancelJob } from "./core/queue";
 import { config } from "./fetchDetails/config";
+import { loadQueue, saveQueue } from "./utils/saveToDisk";
+import LocalSession from "telegraf-session-local";
 
 const bot = new Telegraf<BotContext>(BOT_TOKEN);
+const storage = new LocalSession({ database: "./db.json" });
 
 initQueue(bot);
+loadQueue();
 
 const stage = new Scenes.Stage<BotContext>([scrapeWizard]);
 
-bot.use(session());
+bot.use(storage.middleware());
 bot.use(stage.middleware());
 
 bot.start((ctx) => {
@@ -22,6 +26,8 @@ bot.start((ctx) => {
       "• /fetch - Start a new request\n" +
       "• /status - Check active request\n" +
       "• /cancel - Abort ongoing request\n\n" +
+      "• /github - Get the source code\n" +
+      "• /help - Get the help menu\n\n" +
       "<i>Let's get started!</i> 🚀\n\n" +
       "<blockquote><b>⚠️ Warning:</b> Too many requests can temporarily disable your KTU account.\n" +
       `If disabled, try resetting your password on the <a href="${config.BASE_URL}">KTU Portal</a>. This usually resolves the issue.</blockquote>\n\n` +
@@ -39,7 +45,8 @@ bot.command("help", (ctx) => {
       "• /fetch - Start a new request\n" +
       "• /status - Check active request\n" +
       "• /cancel - Abort ongoing request\n\n" +
-      "<i>Let's get started!</i> 🚀\n\n" +
+      "• /github - Get the source code\n" +
+      "• /help - Get the help menu\n\n" +
       "<blockquote><b>⚠️ Warning:</b> Too many requests can temporarily disable your KTU account.\n" +
       `If disabled, try resetting your password on the <a href="${config.BASE_URL}">KTU Portal</a>. This usually resolves the issue.</blockquote>\n\n` +
       '<i>Made with ❤️ by <a href="https://instagram.com/belulu.lulu">Kichu</a></i>\n\n' +
@@ -68,7 +75,7 @@ bot.command("cancel", (ctx) => {
 
 bot.command("github", (ctx) => {
   ctx.reply(
-    `<b>Source code: </b><a href="https://github.com/Kichu-Belulu/ktu-results-bot"><b>GitHub</b></a>`,
+    `<b>Source code: </b><a href="https://github.com/kichu12348/ktu-results-bot"><b>GitHub</b></a>`,
     { parse_mode: "HTML", link_preview_options: { is_disabled: true } },
   );
 });
@@ -81,5 +88,12 @@ bot.launch(() => {
   console.log("🤖 Bot is running...");
 });
 
-process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
+process.on("SIGINT", () => {
+  saveQueue();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  saveQueue();
+  process.exit(0);
+});

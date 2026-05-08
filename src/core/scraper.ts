@@ -23,14 +23,13 @@ export async function runScraper(
   while (attempt < maxRetries) {
     try {
       attempt++;
-      console.log(`Starting scrape job for user ${data.userId}, attempt ${attempt}`);
 
-      const timeoutPromise = new Promise<never>(
-        (_, reject) =>
-          setTimeout(
-            () => reject(new Error("KTU Timeout: Server took too long to respond.")),
-            60000,
-          ),
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(new Error("KTU Timeout: Server took too long to respond.")),
+          60000,
+        ),
       );
 
       const resultPromise = fetchDetails({
@@ -39,10 +38,9 @@ export async function runScraper(
         semester: data.semester,
       });
 
-      const result = await Promise.race<(GradesBySemester | undefined) | never>([
-        resultPromise,
-        timeoutPromise,
-      ]);
+      const result = await Promise.race<(GradesBySemester | undefined) | never>(
+        [resultPromise, timeoutPromise],
+      );
 
       if (!result) {
         throw new Error("Invalid credentials or KTU structure changed.");
@@ -52,6 +50,17 @@ export async function runScraper(
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error(`Scrape attempt ${attempt} failed: ${errorMsg}`);
+
+      if (
+        errorMsg.includes("Invalid credentials") ||
+        errorMsg.includes("Invalid KTU ID or Password") ||
+        errorMsg.includes("Invalid KTU Credentials.") ||
+        errorMsg.includes(
+          "KTU Login Failure: Error ! Invalid username or password.",
+        )
+      ) {
+        throw error;
+      }
 
       if (attempt >= maxRetries) {
         throw error;

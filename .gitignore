@@ -1,6 +1,9 @@
 # dependencies (bun install)
 node_modules
 
+db.json
+queue.json
+
 # output
 out
 dist

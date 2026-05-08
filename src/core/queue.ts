@@ -4,13 +4,23 @@ import { runScraper, type ScrapeJobData } from "./scraper";
 import type { Course, GradesBySemester } from "../fetchDetails/parser";
 
 const activeJobs = new Map<number, ScrapeJobData>();
-const jobQueue: ScrapeJobData[] = [];
+export const jobQueue: ScrapeJobData[] = [];
 let isProcessing = false;
 
 let botInstance: Telegraf<BotContext> | null = null;
 
 export function initQueue(bot: Telegraf<BotContext>) {
   botInstance = bot;
+}
+
+export function resumeJobs(jobs: ScrapeJobData[]) {
+  for (const job of jobs) {
+    if (!activeJobs.has(job.userId)) {
+      activeJobs.set(job.userId, job);
+      jobQueue.push(job);
+    }
+  }
+  processQueue();
 }
 
 export async function addJobToQueue(data: ScrapeJobData) {
@@ -20,7 +30,6 @@ export async function addJobToQueue(data: ScrapeJobData) {
 
   activeJobs.set(data.userId, data);
   jobQueue.push(data);
-  console.log(`Job added to queue for user ${data.userId}`);
 
   processQueue();
 }
@@ -91,7 +100,7 @@ async function processQueue() {
             job.chatId,
             job.messageId,
             undefined,
-            `❌ Scrape failed: ${errorMsg}\n\nPlease check your credentials and try again using /start.`,
+            `❌ Fetch failed: ${errorMsg}\n\nPlease check your credentials and try again using /fetch.`,
           )
           .catch(() => {});
       }

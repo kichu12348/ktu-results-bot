@@ -6,6 +6,7 @@ export interface BotSession extends Scenes.WizardSession<Scenes.WizardSessionDat
   semester?: string;
   rateLimitTokens?: number;
   lastRequestTime?: number;
+  timeoutId?: ReturnType<typeof setTimeout>;
 }
 
 export interface BotContext extends Context {
