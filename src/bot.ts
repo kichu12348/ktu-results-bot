@@ -1,3 +1,4 @@
+import "./utils/writeAbleFetch";
 import { Telegraf, Scenes, session } from "telegraf";
 import { BOT_TOKEN } from "./config";
 import type { BotContext } from "./types/session";
@@ -5,17 +6,17 @@ import { scrapeWizard } from "./scenes/scrapeWizard";
 import { initQueue, getJobStatus, cancelJob } from "./core/queue";
 import { config } from "./fetchDetails/config";
 import { loadQueue, saveQueue } from "./utils/saveToDisk";
-import LocalSession from "telegraf-session-local";
+import store from "./utils/redisClient";
+import "./utils/writeAbleFetch";
 
 const bot = new Telegraf<BotContext>(BOT_TOKEN);
-const storage = new LocalSession({ database: "./db.json" });
 
 initQueue(bot);
 loadQueue();
 
 const stage = new Scenes.Stage<BotContext>([scrapeWizard]);
 
-bot.use(storage.middleware());
+bot.use(session({ store }));
 bot.use(stage.middleware());
 
 bot.start((ctx) => {

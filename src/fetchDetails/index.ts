@@ -24,7 +24,7 @@ export default async function fetchDetails({
     );
 
     if (error) {
-      throw error;
+      throw new Error(typeof error === "string" ? error : String(error));
     }
 
     if (newSessionCookie) {

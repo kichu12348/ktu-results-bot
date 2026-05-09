@@ -6,6 +6,10 @@ import type { Semester } from "../fetchDetails/functions";
 
 export const activeWizardChats = new Set<number>();
 
+const clearSessionData = (ctx: BotContext) => {
+  ctx.session = undefined as any;
+};
+
 const clearSceneTimeout = (ctx: BotContext) => {
   if (ctx.session.timeoutId) {
     clearTimeout(ctx.session.timeoutId);
@@ -21,9 +25,7 @@ const setSceneTimeout = (ctx: BotContext) => {
       await ctx.reply(
         "⏳ Session timed out due to inactivity. Please start /fetch again.",
       );
-      ctx.session.password = undefined;
-      ctx.session.username = undefined;
-      ctx.session.semester = undefined;
+      clearSessionData(ctx);
       if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
       if ((ctx.session as any).__scenes) {
         delete (ctx.session as any).__scenes;
@@ -110,6 +112,7 @@ export const scrapeWizard = new Scenes.WizardScene<BotContext>(
     if (data === "cancel") {
       if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
       clearSceneTimeout(ctx);
+      clearSessionData(ctx);
       try {
         await ctx.editMessageText("❌ Fetch cancelled.");
       } catch (e) {
@@ -137,11 +140,13 @@ export const scrapeWizard = new Scenes.WizardScene<BotContext>(
     const userId = ctx.from?.id;
     if (!userId) {
       if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
+      clearSessionData(ctx);
       return ctx.scene.leave();
     }
 
     if (!checkRateLimit(userId)) {
       if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
+      clearSessionData(ctx);
       await ctx.reply(
         "🛑 You have exceeded your rate limit. Please try again later (Max 5 requests per hour).",
       );
@@ -171,6 +176,7 @@ export const scrapeWizard = new Scenes.WizardScene<BotContext>(
       );
     }
 
+    clearSessionData(ctx);
     if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
     return ctx.scene.leave();
   },

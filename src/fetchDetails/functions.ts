@@ -178,7 +178,7 @@ export async function performLogin({
     const finalCookies = getCookieString(cookieJar);
 
     if (!loginSuccessful || !finalCookies.includes("JSESSIONID")) {
-      return { error: "Invalid KTU ID or Password" };
+      return { error: "Invalid KTU Username or Password" };
     }
 
     return {

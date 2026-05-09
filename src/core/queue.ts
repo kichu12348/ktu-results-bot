@@ -92,9 +92,9 @@ async function processQueue() {
 
       await sendResult(job, result);
     } catch (error: unknown) {
-      console.error(`Job failed for user ${job.userId}`, error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error(`Job failed for user ${job.userId}: ${errorMsg}`);
       if (activeJobs.has(job.userId) && botInstance) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
         await botInstance.telegram
           .editMessageText(
             job.chatId,
@@ -128,7 +128,7 @@ async function sendResult(
   if (!bot || !result) return;
 
   try {
-    if (result.sgpa.trim() === "Not Available") {
+    if (result.sgpa?.trim() === "Not Available") {
       bot.telegram
         .editMessageText(
           job.chatId,

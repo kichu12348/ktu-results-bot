@@ -49,7 +49,7 @@ export async function runScraper(
       return result;
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      console.error(`Scrape attempt ${attempt} failed: ${errorMsg}`);
+      console.warn(`Scrape attempt ${attempt} failed: ${errorMsg}`);
 
       if (
         errorMsg.includes("Invalid credentials") ||
@@ -59,7 +59,7 @@ export async function runScraper(
           "KTU Login Failure: Error ! Invalid username or password.",
         )
       ) {
-        throw error;
+        throw new Error(errorMsg);
       }
 
       if (attempt >= maxRetries) {

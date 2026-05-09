@@ -8,6 +8,7 @@ queue.json
 out
 dist
 *.tgz
+*.txt
 
 # code coverage
 coverage

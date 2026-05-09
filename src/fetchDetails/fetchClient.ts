@@ -1,4 +1,3 @@
-import { fetch } from "bun";
 import { MAX_FETCH_RETRIES } from "./config";
 
 export async function resilientFetch(
