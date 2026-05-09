@@ -9,18 +9,20 @@ A Telegram bot built to seamlessly fetch Kerala Technological University (KTU) a
 - **Automated Result Fetching:** Get your academic results delivered directly to your Telegram chat.
 - **Background Queue System:** Requests are processed in a queue to prevent overloading the KTU portal.
 - **Job Management:** Track your request status or cancel ongoing jobs dynamically.
-- **Session Support:** Persistent queuing system backed by local storage (`db.json`).
+- **Session Support:** Persistent queuing system backed by local storage (`db.json`) and Redis for session management.
 
 ## Tech Stack
 
 - **Runtime:** [Bun](https://bun.sh/)
 - **Language:** TypeScript
 - **Bot Framework:** [Telegraf](https://telegraf.js.org/)
+- **Cache/Session:** [Redis](https://redis.io/)
 
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 - [Bun](https://bun.sh/) installed on your machine.
+- A running Redis server.
 - A Telegram Bot Token. You can get one by chatting with [@BotFather](https://t.me/BotFather) on Telegram.
 
 ## Installation & Setup
@@ -37,9 +39,10 @@ Before you begin, ensure you have met the following requirements:
    ```
 
 3. **Configure Environment Variables:**
-   Create a new file named `.env` in the root of the project and add your Telegram Bot Token:
+   Create a new file named `.env` in the root of the project and add your Telegram Bot Token and Redis URL:
    ```env
    BOT_TOKEN=your_telegram_bot_token_here
+   REDIS_URL=redis://localhost:6379
    ```
 
 ## Usage
