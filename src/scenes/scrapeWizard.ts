@@ -6,10 +6,15 @@ import type { Semester } from "../fetchDetails/functions";
 
 export const activeWizardChats = new Set<number>();
 
+// 1. external Map to hold the active timers
+const wizardTimers = new Map<number, NodeJS.Timeout>();
+
 const clearSceneTimeout = (ctx: BotContext) => {
-  if (ctx.session?.timeoutId) {
-    clearTimeout(ctx.session.timeoutId);
-    ctx.session.timeoutId = undefined;
+  const chatId = ctx.chat?.id;
+  // 2. Clear the timer from the Map instead of the session
+  if (chatId && wizardTimers.has(chatId)) {
+    clearTimeout(wizardTimers.get(chatId));
+    wizardTimers.delete(chatId);
   }
 };
 
@@ -19,19 +24,26 @@ const clearSessionData = (ctx: BotContext) => {
 };
 
 const setSceneTimeout = (ctx: BotContext) => {
-  if (ctx.chat) activeWizardChats.add(ctx.chat.id);
-  clearSceneTimeout(ctx);
-  ctx.session.timeoutId = setTimeout(async () => {
+  const chatId = ctx.chat?.id;
+  if (!chatId) return;
+
+  activeWizardChats.add(chatId);
+  clearSceneTimeout(ctx); // Clears any existing timer for this chat
+
+  // 3. Set the new timer and store it in the Map
+  const timerId = setTimeout(async () => {
     try {
       await ctx.reply(
         "⏳ Session timed out due to inactivity. Please start /fetch again.",
       );
       clearSessionData(ctx);
-      if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
+      activeWizardChats.delete(chatId);
     } catch (e) {
       console.warn("Could not send timeout message");
     }
   }, 120000); // 2 minutes
+
+  wizardTimers.set(chatId, timerId);
 };
 
 export const scrapeWizard = new Scenes.WizardScene<BotContext>(
