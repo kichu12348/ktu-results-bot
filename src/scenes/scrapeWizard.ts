@@ -6,15 +6,16 @@ import type { Semester } from "../fetchDetails/functions";
 
 export const activeWizardChats = new Set<number>();
 
-const clearSessionData = (ctx: BotContext) => {
-  ctx.session = undefined as any;
-};
-
 const clearSceneTimeout = (ctx: BotContext) => {
-  if (ctx.session.timeoutId) {
+  if (ctx.session?.timeoutId) {
     clearTimeout(ctx.session.timeoutId);
     ctx.session.timeoutId = undefined;
   }
+};
+
+const clearSessionData = (ctx: BotContext) => {
+  clearSceneTimeout(ctx);
+  ctx.session = undefined as any;
 };
 
 const setSceneTimeout = (ctx: BotContext) => {
@@ -27,9 +28,6 @@ const setSceneTimeout = (ctx: BotContext) => {
       );
       clearSessionData(ctx);
       if (ctx.chat) activeWizardChats.delete(ctx.chat.id);
-      if ((ctx.session as any).__scenes) {
-        delete (ctx.session as any).__scenes;
-      }
     } catch (e) {
       console.warn("Could not send timeout message");
     }
