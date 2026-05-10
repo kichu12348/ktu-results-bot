@@ -18,6 +18,8 @@
   },
   "scripts": {
     "dev": "bun run --watch src/bot.ts",
-    "start": "bun run src/bot.ts"
+    "build": "bun run build.ts",
+    "start": "bun run dist/bot.js",
+    "postinstall": "bun run scripts/patch-telegraf.ts"
   }
 }

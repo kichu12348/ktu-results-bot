@@ -7,7 +7,6 @@ import { initQueue, getJobStatus, cancelJob } from "./core/queue";
 import { config } from "./fetchDetails/config";
 import { loadQueue, saveQueue } from "./utils/saveToDisk";
 import store from "./utils/redisClient";
-import "./utils/writeAbleFetch";
 
 const bot = new Telegraf<BotContext>(BOT_TOKEN);
 
